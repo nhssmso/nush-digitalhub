@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Movement Tracker</title>
+  
+  <!-- HTML5-QRCode Library -->
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --border-focus: #94a3b8;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --text-subtle: #94a3b8;
+      --primary: #0f172a;
+      --primary-hover: #1e293b;
+      --success: #059669;
+      --warning: #d97706;
+      --danger: #dc2626;
+      --badge-bg: #f1f5f9;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    html, body {
+      width: 100%;
+      overflow-x: hidden; /* Prevents global page drift on mobile */
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 24px 16px;
+      display: flex;
+      justify-content: center;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 960px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .header-title h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--text);
+    }
+
+    .header-title p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Control Bar (Venue, Date, Limit, Camera) */
+    .controls-bar {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .control-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .control-item label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+    }
+
+    input, select {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.15s ease;
+      max-width: 100%;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--border-focus);
+    }
+
+    button {
+      background: var(--primary);
+      color: #ffffff;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.15s ease, background 0.15s ease;
+      white-space: nowrap;
+    }
+
+    button:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--badge-bg);
+    }
+
+    .btn-danger-outline {
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid var(--border);
+      font-size: 0.78rem;
+      padding: 5px 10px;
+    }
+
+    .btn-danger-outline:hover {
+      background: #fef2f2;
+      border-color: var(--danger);
+    }
+
+    /* Scanner & Entry Card */
+    .entry-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    #reader {
+      width: 100%;
+      max-width: 340px;
+      margin: 0 auto;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      display: none;
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: 2fr 1.5fr 1fr auto;
+      gap: 10px;
+    }
+
+    /* Active & Waitlist Layout */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 0; /* Prevents flex children from bursting out */
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .panel-count {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* Queue & Item Cards */
+    .queue-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .student-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: var(--bg);
+      border-radius: 6px;
+      gap: 8px;
+    }
+
+    .student-info {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .student-name {
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .student-class {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 2px 6px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    .student-id {
+      font-size: 0.75rem;
+      color: var(--text-subtle);
+    }
+
+    .timer {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 3px 6px;
+      border-radius: 4px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .timer.normal { color: var(--text); }
+    .timer.warning { color: var(--warning); border-color: var(--warning); }
+    .timer.danger { color: var(--danger); border-color: var(--danger); }
+
+    .btn-return {
+      padding: 4px 10px;
+      font-size: 0.78rem;
+      background: var(--text);
+    }
+
+    .empty-state {
+      font-size: 0.825rem;
+      color: var(--text-subtle);
+      padding: 12px 0;
+      text-align: center;
+    }
+
+    /* Responsive Scrollable Table Container */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      min-width: 580px; /* Ensures clean spacing on mobile without crushing columns */
+      border-collapse: collapse;
+      font-size: 0.825rem;
+      text-align: left;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    th {
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .history-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 16px 12px;
+      }
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      .controls-bar {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .controls-bar button {
+        grid-column: span 2;
+        width: 100%;
+      }
+      .input-row {
+        grid-template-columns: 1fr;
+      }
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header with Venue, Date & Pass Controls -->
+    <header>
+      <div class="header-title">
+        <h1>Movement Tracker</h1>
+        <p>Washroom Pass Management</p>
+      </div>
+
+      <div class="controls-bar">
+        <div class="control-item">
+          <label>Venue</label>
+          <select id="venueSelect">
+            <option value="School Hall">School Hall</option>
+            <option value="Indoor sports hall">Indoor sports hall</option>
+            <option value="A03-02">A03-02</option>
+            <option value="B06-03">B06-03</option>
+            <option value="C05-07">C05-07</option>
+            <option value="E1-09">E1-09</option>
+            <option value="Library">Library</option>
+            <option value="Event Horizon">Event Horizon</option>
+          </select>
+        </div>
+
+        <div class="control-item">
+          <label>Date</label>
+          <input type="date" id="dateInput" />
+        </div>
+
+        <div class="control-item">
+          <label>Pass Limit</label>
+          <select id="limitSelect" onchange="updatePassLimit()">
+            <option value="1">1</option>
+            <option value="2" selected>2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+        </div>
+
+        <button id="toggleCameraBtn" class="btn-secondary" onclick="toggleCameraScanner()">
+          📷 Camera
+        </button>
+      </div>
+    </header>
+
+    <!-- Scan & Manual Entry Section -->
+    <div class="entry-card">
+      <div id="reader"></div>
+
+      <div class="input-row">
+        <input type="text" id="barcodeInput" placeholder="Scan Barcode ID or type..." autofocus autocomplete="off" />
+        <input type="text" id="nameInput" placeholder="Student Name" />
+        <input type="text" id="classInput" placeholder="Class" />
+        <button onclick="handleManualSubmit()">Record</button>
+      </div>
+    </div>
+
+    <!-- Active Movement & Waitlist Grid -->
+    <div class="dashboard-grid">
+      <!-- Currently Out -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Currently Out</span>
+          <span class="panel-count" id="activeCount">0 / 2</span>
+        </div>
+        <ul class="queue-list" id="activeList"></ul>
+      </div>
+
+      <!-- Waitlist -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Waiting List</span>
+          <span class="panel-count" id="waitCount">0 in line</span>
+        </div>
+        <ul class="queue-list" id="waitList"></ul>
+      </div>
+    </div>
+
+    <!-- Movement Log with Responsive Scroll Wrapper -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Movement Log</span>
+        <div class="history-actions">
+          <button class="btn-secondary" style="padding: 5px 12px; font-size: 0.78rem;" onclick="exportToCSV()">
+            📥 Export CSV
+          </button>
+          <button class="btn-danger-outline" onclick="clearDailyLog()">
+            Clear
+          </button>
+        </div>
+      </div>
+      
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Venue</th>
+              <th>Student</th>
+              <th>Class</th>
+              <th>Departed</th>
+              <th>Returned</th>
+              <th>Duration</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let maxActivePasses = 2;
+    let activeStudents = [];
+    let waitlist = [];
+    
+    let movementHistory = JSON.parse(localStorage.getItem('passMovementHistory') || '[]');
+
+    const studentDirectory = {
+      "S1001": { name: "Alex Tan", class: "3-Integrity" },
+      "S1002": { name: "Sarah Lim", class: "3-Integrity" },
+      "S1003": { name: "Marcus Lee", class: "3-Integrity" },
+      "S2001": { name: "David Wong", class: "3-Respect" },
+      "S2002": { name: "Nurul Aisyah", class: "3-Respect" },
+      "S2003": { name: "Rachel Chen", class: "3-Respect" }
+    };
+
+    let html5QrCode = null;
+    let isCameraRunning = false;
+    let lastScanTime = 0;
+    const SCAN_COOLDOWN_MS = 2000;
+
+    const barcodeInput = document.getElementById("barcodeInput");
+    const nameInput = document.getElementById("nameInput");
+    const classInput = document.getElementById("classInput");
+    const venueSelect = document.getElementById("venueSelect");
+    const limitSelect = document.getElementById("limitSelect");
+    const dateInput = document.getElementById("dateInput");
+    const readerDiv = document.getElementById("reader");
+    const toggleCameraBtn = document.getElementById("toggleCameraBtn");
+
+    dateInput.value = new Date().toISOString().split('T')[0];
+
+    function saveState() {
+      localStorage.setItem('passMovementHistory', JSON.stringify(movementHistory));
+    }
+
+    function updatePassLimit() {
+      maxActivePasses = parseInt(limitSelect.value, 10);
+      checkAndPromoteWaitlist();
+      render();
+    }
+
+    barcodeInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const id = barcodeInput.value.trim();
+        if (id) processBarcode(id);
+      }
+    });
+
+    function processBarcode(id) {
+      const activeIndex = activeStudents.findIndex(s => s.id === id);
+      if (activeIndex !== -1) {
+        checkInStudent(activeIndex);
+        resetInputs();
+        return;
+      }
+
+      let name = nameInput.value.trim();
+      let cls = classInput.value.trim();
+
+      if (studentDirectory[id]) {
+        name = studentDirectory[id].name;
+        cls = studentDirectory[id].class;
+      }
+
+      processStudentRequest(id, name || "Student", cls || "N/A");
+      resetInputs();
+    }
+
+    function handleManualSubmit() {
+      const id = barcodeInput.value.trim() || `ID-${Math.floor(1000 + Math.random() * 9000)}`;
+      let name = nameInput.value.trim() || "Student";
+      let cls = classInput.value.trim() || "N/A";
+
+      if (studentDirectory[id]) {
+        name = studentDirectory[id].name;
+        cls = studentDirectory[id].class;
+      }
+
+      const activeIndex = activeStudents.findIndex(s => s.id === id);
+      if (activeIndex !== -1) {
+        checkInStudent(activeIndex);
+      } else {
+        processStudentRequest(id, name, cls);
+      }
+      resetInputs();
+    }
+
+    function processStudentRequest(id, name, cls) {
+      if (waitlist.some(s => s.id === id)) {
+        alert(`${name} is already in the waitlist.`);
+        return;
+      }
+
+      const student = {
+        id,
+        name,
+        class: cls,
+        venue: venueSelect.value,
+        date: dateInput.value,
+        startTime: null
+      };
+
+      if (activeStudents.length < maxActivePasses) {
+        student.startTime = Date.now();
+        activeStudents.push(student);
+      } else {
+        waitlist.push(student);
+      }
+      render();
+    }
+
+    function checkInStudent(index) {
+      const returnedStudent = activeStudents.splice(index, 1)[0];
+      const endTime = Date.now();
+      const durationSec = Math.round((endTime - returnedStudent.startTime) / 1000);
+
+      movementHistory.unshift({
+        date: returnedStudent.date,
+        venue: returnedStudent.venue,
+        name: returnedStudent.name,
+        id: returnedStudent.id,
+        class: returnedStudent.class,
+        departed: new Date(returnedStudent.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        returned: new Date(endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        duration: formatDuration(durationSec)
+      });
+
+      saveState();
+      checkAndPromoteWaitlist();
+      render();
+    }
+
+    function checkAndPromoteWaitlist() {
+      while (activeStudents.length < maxActivePasses && waitlist.length > 0) {
+        const nextStudent = waitlist.shift();
+        nextStudent.startTime = Date.now();
+        activeStudents.push(nextStudent);
+      }
+    }
+
+    function exportToCSV() {
+      if (movementHistory.length === 0) {
+        alert("No movement records to export.");
+        return;
+      }
+
+      const headers = ["Date", "Venue", "Student Name", "Student ID", "Class", "Departed", "Returned", "Duration"];
+      const rows = movementHistory.map(item => [
+        `"${item.date}"`,
+        `"${item.venue || venueSelect.value}"`,
+        `"${item.name}"`,
+        `"${item.id}"`,
+        `"${item.class}"`,
+        `"${item.departed}"`,
+        `"${item.returned}"`,
+        `"${item.duration}"`
+      ]);
+
+      const csvContent = [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `Movement_Log_${dateInput.value}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function clearDailyLog() {
+      if (confirm("Are you sure you want to clear all movement logs for today?")) {
+        movementHistory = [];
+        saveState();
+        render();
+      }
+    }
+
+    function formatDuration(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins}m ${secs}s`;
+    }
+
+    function formatTimer(ms) {
+      const totalSecs = Math.floor(ms / 1000);
+      const mins = String(Math.floor(totalSecs / 60)).padStart(2, '0');
+      const secs = String(totalSecs % 60).padStart(2, '0');
+      return { text: `${mins}:${secs}`, totalSecs };
+    }
+
+    function resetInputs() {
+      barcodeInput.value = "";
+      nameInput.value = "";
+      classInput.value = "";
+      barcodeInput.focus();
+    }
+
+    function toggleCameraScanner() {
+      if (isCameraRunning) {
+        stopCamera();
+      } else {
+        startCamera();
+      }
+    }
+
+    function startCamera() {
+      readerDiv.style.display = "block";
+      html5QrCode = new Html5Qrcode("reader");
+
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 220, height: 140 }, aspectRatio: 1.777778 },
+        (decodedText) => {
+          const now = Date.now();
+          if (now - lastScanTime < SCAN_COOLDOWN_MS) return;
+          lastScanTime = now;
+          processBarcode(decodedText);
+        },
+        () => {}
+      ).then(() => {
+        isCameraRunning = true;
+        toggleCameraBtn.textContent = "Stop Camera";
+      }).catch(() => {
+        alert("Unable to access camera.");
+        readerDiv.style.display = "none";
+      });
+    }
+
+    function stopCamera() {
+      if (html5QrCode && isCameraRunning) {
+        html5QrCode.stop().then(() => {
+          html5QrCode.clear();
+          readerDiv.style.display = "none";
+          isCameraRunning = false;
+          toggleCameraBtn.textContent = "📷 Camera";
+        });
+      }
+    }
+
+    function render() {
+      document.getElementById("activeCount").textContent = `${activeStudents.length} / ${maxActivePasses}`;
+      document.getElementById("waitCount").textContent = `${waitlist.length} in line`;
+
+      const activeList = document.getElementById("activeList");
+      activeList.innerHTML = activeStudents.length === 0 ? `<li class="empty-state">No students currently out.</li>` : "";
+
+      activeStudents.forEach((s, idx) => {
+        const elapsedMs = Date.now() - s.startTime;
+        const { text, totalSecs } = formatTimer(elapsedMs);
+
+        let timerClass = "normal";
+        if (totalSecs >= 600) timerClass = "danger";
+        else if (totalSecs >= 300) timerClass = "warning";
+
+        const li = document.createElement("li");
+        li.className = "student-row";
+        li.innerHTML = `
+          <div class="student-info">
+            <span class="student-name">${s.name}</span>
+            <span class="student-class">${s.class}</span>
+            <span class="student-id">#${s.id}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="timer ${timerClass}">${text}</span>
+            <button class="btn-return" onclick="checkInStudent(${idx})">Return</button>
+          </div>
+        `;
+        activeList.appendChild(li);
+      });
+
+      const waitListEl = document.getElementById("waitList");
+      waitListEl.innerHTML = waitlist.length === 0 ? `<li class="empty-state">No students waiting.</li>` : "";
+
+      waitlist.forEach((s, idx) => {
+        const li = document.createElement("li");
+        li.className = "student-row";
+        li.innerHTML = `
+          <div class="student-info">
+            <span style="font-weight: 600; font-size: 0.8rem; color: var(--text-muted); width: 18px;">${idx + 1}.</span>
+            <span class="student-name">${s.name}</span>
+            <span class="student-class">${s.class}</span>
+          </div>
+          <span class="student-id">Queued</span>
+        `;
+        waitListEl.appendChild(li);
+      });
+
+      const historyBody = document.getElementById("historyBody");
+      historyBody.innerHTML = movementHistory.length === 0 
+        ? `<tr><td colspan="7" class="empty-state">No recorded movements yet.</td></tr>`
+        : movementHistory.map(item => `
+          <tr>
+            <td>${item.date || dateInput.value}</td>
+            <td><span class="student-class">${item.venue || 'N/A'}</span></td>
+            <td><strong>${item.name}</strong> <span class="student-id">(${item.id})</span></td>
+            <td><span class="student-class">${item.class}</span></td>
+            <td>${item.departed}</td>
+            <td>${item.returned}</td>
+            <td><strong>${item.duration}</strong></td>
+          </tr>
+        `).join("");
+    }
+
+    setInterval(() => {
+      if (activeStudents.length > 0) render();
+    }, 1000);
+
+    render();
+  </script>
+</body>
+</html>
