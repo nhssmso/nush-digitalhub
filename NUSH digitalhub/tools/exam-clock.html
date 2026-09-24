@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Clock - v3</title>
+    <!-- 
+      ========================================================================
+      STYLESHEET SECTION (CSS)
+      ========================================================================
+      Modify colors, typography, layout, and sidebar drawer styles here.
+    -->
+    <style>
+        :root {
+            --bg-color: #0f172a;       /* Dark theme background */
+            --card-bg: #1e293b;        /* Card background */
+            --text-color: #f8fafc;     /* Primary text color */
+            --text-muted: #94a3b8;     /* Secondary/muted text color */
+            --accent-color: #f8fafc;   /* White/light elapsed bar color */
+            --remaining-color: rgba(255, 255, 255, 0.12); /* Neutral background before last 5 mins */
+            --danger-color: #ef4444;   /* Red warning color for last 5 mins */
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Light theme overrides with custom selected button & elapsed bar styling */
+        body.light-theme {
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-color: #0f172a;
+            --text-muted: #64748b;
+            --accent-color: #555a63; /* Light theme elapsed progress bar color */
+            --remaining-color: rgba(0, 0, 0, 0.25);
+            --border-color: rgba(0, 0, 0, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            transition: background-color 0.3s, color 0.3s;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Top-Right Corner Controls */
+        .page-top-actions {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        .icon-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .icon-btn:hover { background-color: rgba(128, 128, 128, 0.1); }
+        .icon-btn:active { transform: scale(0.95); }
+
+        /* Main Wrapper Card */
+        .clock-container {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 40px 30px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 750px;
+            position: relative;
+            transition: background-color 0.3s;
+        }
+
+        /* Main Clock Display */
+        .clock-display-area {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .timer-display {
+            font-size: 5.5rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            font-variant-numeric: tabular-nums;
+            color: var(--text-color);
+            line-height: 1.1;
+            display: flex;
+            justify-content: center;
+            align-items: baseline;
+            gap: 2px;
+        }
+
+        .time-sec {
+            font-size: 2.5rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .time-ampm {
+            font-size: 2rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        /* Timeline / Progress Bar Section */
+        .timeline-section {
+            margin-bottom: 35px;
+        }
+
+        .timeline-header-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .timeline-bar-container {
+            width: 100%;
+            height: 10px;
+            background-color: var(--remaining-color);
+            border-radius: 5px;
+            overflow: visible;
+            position: relative;
+            transition: background-color 0.3s;
+        }
+
+        .timeline-bar-fill {
+            height: 100%;
+            background-color: var(--accent-color);
+            width: 0%;
+            border-top-left-radius: 5px;
+            border-bottom-left-radius: 5px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: background-color 0.3s;
+        }
+
+        .timeline-indicator-line {
+            position: absolute;
+            top: -4px;
+            width: 2px;
+            height: 18px;
+            background-color: var(--text-color);
+            transform: translateX(-50%);
+            z-index: 5;
+            display: none;
+            box-shadow: 0 0 4px rgba(0,0,0,0.5);
+        }
+
+        .timeline-footer-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 8px;
+            align-items: center;
+        }
+
+        #statusLabel {
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: color 0.3s, font-size 0.3s;
+        }
+
+        /* Warning state: Status label turns red and gets slightly bigger */
+        #statusLabel.warning {
+            color: var(--danger-color);
+            font-size: 1.05rem;
+        }
+
+        /* On-Screen Instructions Section */
+        .instructions-display {
+            text-align: center;
+            min-height: 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .instruction-line {
+            font-size: 1rem;
+            color: var(--text-color);
+        }
+
+        /* ====================================================================
+           SIDEBAR DRAWER & OVERLAY STYLES
+           ==================================================================== */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(2px);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .sidebar-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .sidebar-drawer {
+            position: fixed;
+            top: 0;
+            right: -420px;
+            width: 100%;
+            max-width: 400px;
+            height: 100%;
+            background-color: var(--card-bg);
+            border-left: 1px solid var(--border-color);
+            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 25px;
+            overflow-y: auto;
+        }
+
+        .sidebar-drawer.open {
+            right: 0;
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+
+        .sidebar-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .close-sidebar-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        .close-sidebar-btn:hover { color: var(--text-color); }
+
+        .sidebar-section {
+            margin-bottom: 22px;
+        }
+
+        .sub-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 8px;
+        }
+
+        .sub-section-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .input-duration-hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            opacity: 0.7;
+            font-weight: normal;
+        }
+
+        .control-input {
+            width: 100%;
+            background: rgba(128, 128, 128, 0.1);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            outline: none;
+        }
+        body.light-theme .control-input { background: #f8fafc; }
+
+        .btn-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .badge-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-weight: 600;
+            flex: 1;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        body.light-theme .badge-btn {
+            background: rgba(0, 0, 0, 0.04);
+            color: #0f172a;
+            border-color: #cbd5e1;
+        }
+
+        /* In light theme, only the selected/active button background changes to #555a63 */
+        .badge-btn.active {
+            background-color: var(--text-color);
+            color: var(--card-bg);
+            border-color: var(--text-color);
+        }
+        body.light-theme .badge-btn.active {
+            background-color: #555a63;
+            color: #ffffff;
+            border-color: #555a63;
+        }
+
+        .primary-action-btn {
+            width: 100%;
+            background-color: #1e293b;
+            color: #ffffff;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        body.light-theme .primary-action-btn {
+            background-color: #555a63;
+            color: #ffffff;
+        }
+
+        .textarea-instructions {
+            width: 100%;
+            background: rgba(128, 128, 128, 0.1);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            resize: vertical;
+            min-height: 80px;
+        }
+        body.light-theme .textarea-instructions { background: #f8fafc; }
+
+        .chip-container {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .chip {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 6px 10px;
+            border-radius: 16px;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+        .chip:hover { border-color: var(--text-color); color: var(--text-color); }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            font-size: 0.9rem;
+            color: var(--text-color);
+        }
+        .checkbox-row label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Right Corner Controls (Hamburger & Reset) -->
+    <div class="page-top-actions">
+        <button class="icon-btn" id="resetTopBtn" title="Reset Exam">🔄</button>
+        <button class="icon-btn" id="hamburgerBtn" title="Groups and options">☰</button>
+    </div>
+
+    <!-- Sliding Sidebar Drawer & Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="sidebar-drawer" id="sidebarDrawer">
+        <div class="sidebar-header">
+            <span class="sidebar-title">Groups and options</span>
+            <button class="close-sidebar-btn" id="closeSidebarBtn">&times;</button>
+        </div>
+
+        <!-- 1. Start Time -->
+        <div class="sidebar-section">
+            <div class="sub-section-title" style="margin-bottom: 8px;">Start time</div>
+            <input type="time" id="startTimeInput" class="control-input">
+        </div>
+
+        <!-- 2. End Time -->
+        <div class="sidebar-section">
+            <div class="sub-section-header">
+                <span class="sub-section-title">End time</span>
+                <span class="input-duration-hint" id="durationHint">-- min</span>
+            </div>
+            <input type="time" id="endTimeInput" class="control-input">
+        </div>
+
+        <!-- 3. On-Screen Instructions Editor -->
+        <div class="sidebar-section">
+            <div class="sub-section-title" style="margin-bottom: 8px;">On-screen instructions</div>
+            <textarea class="textarea-instructions" id="instructionTextarea">Phones off, in bags
+No candidate may leave before 10:00</textarea>
+            <div class="chip-container">
+                <button class="chip" onclick="addInstructionChip('Phones off, in bags')">+ Phones off, in bags</button>
+                <button class="chip" onclick="addInstructionChip('No candidate may leave before 10:00')">+ No candidate may leave before 10:00</button>
+                <button class="chip" onclick="addInstructionChip('Rough work is not collected')">+ Rough work is not collected</button>
+            </div>
+        </div>
+
+        <!-- 4. Clock Display Settings -->
+        <div class="sidebar-section">
+            <div class="sub-section-title" style="margin-bottom: 8px;">Clock display</div>
+            <div class="checkbox-row">
+                <label><input type="checkbox" id="showSecondsCheckbox" checked> Show seconds</label>
+            </div>
+        </div>
+
+        <!-- 5. Time Format -->
+        <div class="sidebar-section">
+            <div class="sub-section-title" style="margin-bottom: 8px;">Time format</div>
+            <div class="btn-row">
+                <button class="badge-btn" id="format24hBtn">24-hour</button>
+                <button class="badge-btn active" id="format12hBtn">12-hour (AM/PM)</button>
+            </div>
+        </div>
+
+        <!-- 6. Theme Switcher -->
+        <div class="sidebar-section">
+            <div class="sub-section-title" style="margin-bottom: 8px;">Panel theme</div>
+            <div class="btn-row">
+                <button class="badge-btn active" id="darkThemeBtn">Dark theme</button>
+                <button class="badge-btn" id="lightThemeBtn">Light theme</button>
+            </div>
+        </div>
+
+        <!-- 7. Fullscreen Action -->
+        <div class="sidebar-section" style="margin-top: auto;">
+            <button class="primary-action-btn" id="fullscreenBtn">
+                ⤢ Full screen
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Clean Clock Screen -->
+    <div class="clock-container" id="clockContainer">
+        
+        <!-- Main Clock Display Area -->
+        <div class="clock-display-area">
+            <div class="timer-display" id="mainClockDisplay">
+                7:44<span class="time-sec">:47</span><span class="time-ampm">PM</span>
+            </div>
+        </div>
+
+        <!-- Running Timeline / Progress Bar -->
+        <div class="timeline-section">
+            <div class="timeline-header-info">
+                <span id="startTimeLabel">--:--</span>
+                <span id="endTimeLabel">--:--</span>
+            </div>
+            <div class="timeline-bar-container" id="timelineBarContainer">
+                <div class="timeline-bar-fill" id="timelineBarFill"></div>
+                <div class="timeline-indicator-line" id="timelineIndicatorLine"></div>
+            </div>
+            <div class="timeline-footer-info">
+                <span id="elapsedTimeLabel">-- min elapsed</span>
+                <span id="statusLabel">Set start and end time</span>
+            </div>
+        </div>
+
+        <!-- On-Screen Instructions Display -->
+        <div class="instructions-display" id="instructionsDisplayBox">
+            <div class="instruction-line">Phones off, in bags</div>
+            <div class="instruction-line">No candidate may leave before 10:00</div>
+        </div>
+
+    </div>
+
+    <!-- 
+      ========================================================================
+      JAVASCRIPT LOGIC SECTION
+      ========================================================================
+      Handles countdown states, status label warning triggers for last 5 minutes, 
+      and sidebar management.
+    -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- State Variables ---
+            const startTimeInput = document.getElementById('startTimeInput');
+            const endTimeInput = document.getElementById('endTimeInput');
+            const showSecondsCheckbox = document.getElementById('showSecondsCheckbox');
+            const durationHint = document.getElementById('durationHint');
+            const mainClockDisplay = document.getElementById('mainClockDisplay');
+            const statusLabel = document.getElementById('statusLabel');
+            
+            let is12HourFormat = true;
+            let isConfigured = false;
+
+            // Initialize default start and end times
+            function initDefaultTimes() {
+                const now = new Date();
+                const hh = String(now.getHours()).padStart(2, '0');
+                const mm = String(now.getMinutes()).padStart(2, '0');
+                startTimeInput.value = `${hh}:${mm}`;
+
+                let endDate = new Date(now.getTime() + 10 * 60000);
+                const endHh = String(endDate.getHours()).padStart(2, '0');
+                const endMm = String(endDate.getMinutes()).padStart(2, '0');
+                endTimeInput.value = `${endHh}:${endMm}`;
+                
+                isConfigured = false;
+            }
+            initDefaultTimes();
+
+            // --- Helper: Format Time into 12h or 24h with smaller spans ---
+            function formatClockHtml(date) {
+                let hours = date.getHours();
+                let minutes = date.getMinutes();
+                let seconds = date.getSeconds();
+                let ampmHtml = '';
+
+                if (is12HourFormat) {
+                    let ampmStr = hours >= 12 ? 'PM' : 'AM';
+                    ampmHtml = `<span class="time-ampm">${ampmStr}</span>`;
+                    hours = hours % 12;
+                    hours = hours ? hours : 12; 
+                } else {
+                    hours = String(hours).padStart(2, '0');
+                }
+
+                const hh = hours;
+                const mm = String(minutes).padStart(2, '0');
+                const ss = String(seconds).padStart(2, '0');
+
+                let secondsHtml = showSecondsCheckbox.checked ? `<span class="time-sec">:${ss}</span>` : '';
+
+                return `${hh}:${mm}${secondsHtml}${ampmHtml}`;
+            }
+
+            // --- Helper: Format Date object to HH:MM (12h format string for labels) ---
+            function formatLabelTime(date) {
+                let hours = date.getHours();
+                let minutes = date.getMinutes();
+                let ampm = hours >= 12 ? ' PM' : ' AM';
+                hours = hours % 12;
+                hours = hours ? hours : 12;
+                return `${hours}:${String(minutes).padStart(2, '0')}${ampm}`;
+            }
+
+            // --- Main Engine: Updates Every Second ---
+            function updateExamClock() {
+                const now = new Date();
+                
+                mainClockDisplay.innerHTML = formatClockHtml(now);
+
+                if (!startTimeInput.value || !endTimeInput.value) return;
+
+                const [startHours, startMins] = startTimeInput.value.split(':').map(Number);
+                const [endHours, endMins] = endTimeInput.value.split(':').map(Number);
+                
+                let startDate = new Date(now);
+                startDate.setHours(startHours || 0, startMins || 0, 0, 0);
+
+                let endDate = new Date(now);
+                endDate.setHours(endHours || 0, endMins || 0, 0, 0);
+
+                if (endDate <= startDate) {
+                    endDate.setDate(endDate.getDate() + 1);
+                }
+
+                let diffMs = endDate - startDate;
+                let totalMins = Math.round(diffMs / 60000);
+                let hoursPart = Math.floor(totalMins / 60);
+                let minsPart = totalMins % 60;
+                
+                if (hoursPart > 0) {
+                    durationHint.textContent = `${hoursPart}h ${minsPart}m`;
+                } else {
+                    durationHint.textContent = `${minsPart} min`;
+                }
+
+                document.getElementById('startTimeLabel').textContent = formatLabelTime(startDate);
+                document.getElementById('endTimeLabel').textContent = formatLabelTime(endDate);
+
+                if (!isConfigured) {
+                    document.getElementById('elapsedTimeLabel').textContent = `-- min elapsed`;
+                    statusLabel.textContent = "Exam paused / Not started";
+                    statusLabel.classList.remove('warning');
+                    return;
+                }
+
+                const currentTimeMs = now.getTime();
+                const startTimeMs = startDate.getTime();
+                const endTimeMs = endDate.getTime();
+
+                const elapsedMs = currentTimeMs - startTimeMs;
+                const totalDurationMs = endTimeMs - startTimeMs;
+
+                const elapsedMins = Math.floor(elapsedMs / 60000);
+                const remainingMs = endTimeMs - currentTimeMs;
+                const remainingSecs = Math.ceil(remainingMs / 1000);
+
+                const elapsedTimeLabel = document.getElementById('elapsedTimeLabel');
+                const timelineBarFill = document.getElementById('timelineBarFill');
+                const timelineIndicatorLine = document.getElementById('timelineIndicatorLine');
+                const timelineBarContainer = document.getElementById('timelineBarContainer');
+
+                if (currentTimeMs < startTimeMs) {
+                    const diffToStartMs = startTimeMs - currentTimeMs;
+                    const diffToStartMins = Math.ceil(diffToStartMs / 60000);
+                    
+                    elapsedTimeLabel.textContent = `Starts in ${diffToStartMins} min${diffToStartMins !== 1 ? 's' : ''}`;
+                    statusLabel.textContent = "Upcoming exam";
+                    timelineBarFill.style.width = '0%';
+                    timelineIndicatorLine.style.display = 'none';
+                    timelineBarContainer.style.backgroundColor = 'var(--remaining-color)';
+                    statusLabel.classList.remove('warning');
+
+                } else if (currentTimeMs >= startTimeMs && currentTimeMs <= endTimeMs) {
+                    let progressPercent = (elapsedMs / totalDurationMs) * 100;
+                    progressPercent = Math.min(Math.max(progressPercent, 0), 100);
+
+                    timelineBarFill.style.width = `${progressPercent}%`;
+                    timelineIndicatorLine.style.left = `${progressPercent}%`;
+                    timelineIndicatorLine.style.display = 'block';
+
+                    elapsedTimeLabel.textContent = `${Math.max(elapsedMins, 0)} min elapsed`;
+                    
+                    const remMins = Math.ceil(remainingSecs / 60);
+                    statusLabel.textContent = `${remMins} min left`;
+
+                    // If last 5 minutes (300 seconds), turn progress bar background & status label red
+                    if (remainingSecs <= 300 && remainingSecs > 0) {
+                        timelineBarContainer.style.backgroundColor = 'var(--danger-color)';
+                        statusLabel.classList.add('warning');
+                    } else {
+                        timelineBarContainer.style.backgroundColor = 'var(--remaining-color)';
+                        statusLabel.classList.remove('warning');
+                    }
+
+                } else {
+                    timelineBarFill.style.width = '100%';
+                    timelineIndicatorLine.style.display = 'none';
+                    elapsedTimeLabel.textContent = `${Math.round(totalDurationMs / 60000)} min elapsed`;
+                    statusLabel.textContent = "Paper finished";
+                    timelineBarContainer.style.backgroundColor = 'var(--remaining-color)';
+                    statusLabel.classList.remove('warning');
+                }
+            }
+
+            setInterval(updateExamClock, 1000);
+            updateExamClock();
+
+            // --- Sidebar Toggle Logic ---
+            const hamburgerBtn = document.getElementById('hamburgerBtn');
+            const sidebarDrawer = document.getElementById('sidebarDrawer');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+            const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+
+            function openSidebar() {
+                sidebarDrawer.classList.add('open');
+                sidebarOverlay.classList.add('open');
+            }
+
+            function closeSidebar() {
+                sidebarDrawer.classList.remove('open');
+                sidebarOverlay.classList.remove('open');
+                isConfigured = true;
+                updateExamClock();
+            }
+
+            if (hamburgerBtn) hamburgerBtn.addEventListener('click', openSidebar);
+            if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', closeSidebar);
+            if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeSidebar);
+
+            // --- Interactive Controls & Event Listeners ---
+            const instructionTextarea = document.getElementById('instructionTextarea');
+            const instructionsDisplayBox = document.getElementById('instructionsDisplayBox');
+
+            function updateInstructionsDisplay() {
+                const lines = instructionTextarea.value.split('\n');
+                instructionsDisplayBox.innerHTML = lines.map(line => `<div class="instruction-line">${line}</div>`).join('');
+            }
+
+            instructionTextarea.addEventListener('input', updateInstructionsDisplay);
+            updateInstructionsDisplay();
+
+            window.addInstructionChip = function(text) {
+                const currentVal = instructionTextarea.value;
+                instructionTextarea.value = currentVal ? currentVal + '\n' + text : text;
+                updateInstructionsDisplay();
+            };
+
+            // Time format toggles
+            document.getElementById('format12hBtn').addEventListener('click', (e) => {
+                is12HourFormat = true;
+                document.getElementById('format12hBtn').classList.add('active');
+                document.getElementById('format24hBtn').classList.remove('active');
+                updateExamClock();
+            });
+
+            document.getElementById('format24hBtn').addEventListener('click', (e) => {
+                is12HourFormat = false;
+                document.getElementById('format24hBtn').classList.add('active');
+                document.getElementById('format12hBtn').classList.remove('active');
+                updateExamClock();
+            });
+
+            // Theme Switcher
+            document.getElementById('darkThemeBtn').addEventListener('click', () => {
+                document.body.classList.remove('light-theme');
+                document.getElementById('darkThemeBtn').classList.add('active');
+                document.getElementById('lightThemeBtn').classList.remove('active');
+            });
+
+            document.getElementById('lightThemeBtn').addEventListener('click', () => {
+                document.body.classList.add('light-theme');
+                document.getElementById('lightThemeBtn').classList.add('active');
+                document.getElementById('darkThemeBtn').classList.remove('active');
+            });
+
+            // Reset Button
+            document.getElementById('resetTopBtn').addEventListener('click', () => {
+                initDefaultTimes();
+                statusLabel.classList.remove('warning');
+                updateExamClock();
+            });
+
+            // Fullscreen Toggle
+            document.getElementById('fullscreenBtn').addEventListener('click', () => {
+                const container = document.documentElement;
+                if (!document.fullscreenElement) {
+                    container.requestFullscreen().catch(err => alert(err.message));
+                } else {
+                    document.exitFullscreen();
+                }
+            });
+
+            startTimeInput.addEventListener('change', () => { isConfigured = true; updateExamClock(); });
+            endTimeInput.addEventListener('change', () => { isConfigured = true; updateExamClock(); });
+            showSecondsCheckbox.addEventListener('change', updateExamClock);
+        });
+    </script>
+</body>
+</html>
