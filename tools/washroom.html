@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Movement Tracker</title>
+  
+  <!-- Google Fonts: Montserrat -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #faf9f7;
+      --surface: #ffffff;
+      --stone-surface: #f2f0ec;
+      --stone-banner: #333333;
+      --border: #e5e3df;
+      --border-dark: #222222;
+      --text-dark: #222222;
+      --text-muted: #737373;
+      --text-light: #ffffff;
+      
+      --accent-black: #1a1a1a;
+      --accent-gray: #4a4a4a;
+      --warning: #b45309;
+      --danger: #b91c1c;
+      --success: #15803d;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    html, body {
+      width: 100%;
+      overflow-x: hidden;
+      background-color: var(--bg);
+      color: var(--text-dark);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      padding: 36px 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 980px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    /* Top Banner Header */
+    header {
+      background: var(--stone-banner);
+      color: var(--text-light);
+      padding: 24px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    }
+
+    .header-title h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-light);
+    }
+
+    .header-title p {
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #a3a3a3;
+      margin-top: 4px;
+    }
+
+    /* Controls Bar */
+    .controls-bar {
+      display: flex;
+      gap: 14px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .control-item {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .control-item label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #d4d4d4;
+    }
+
+    input, select {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      color: var(--text-dark);
+      padding: 9px 12px;
+      font-size: 0.8rem;
+      letter-spacing: 0.04em;
+      font-weight: 500;
+      outline: none;
+      transition: all 0.2s ease;
+      max-width: 100%;
+      border-radius: 0;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--border-dark);
+    }
+
+    /* Buttons */
+    button, .btn-link {
+      background: var(--accent-black);
+      color: #ffffff;
+      border: 1px solid var(--accent-black);
+      padding: 10px 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      border-radius: 0;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    button:hover, .btn-link:hover {
+      background: #ffffff;
+      color: var(--accent-black);
+    }
+
+    /* Minimalist Header TV Button (Option 1) */
+    .btn-tv {
+      background: transparent;
+      color: #ffffff;
+      border: 1px solid #737373;
+      padding: 8px 16px;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+    }
+
+    .btn-tv:hover {
+      background: #ffffff;
+      color: var(--accent-black);
+      border-color: #ffffff;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text-dark);
+      border: 1px solid var(--border-dark);
+    }
+
+    .btn-outline:hover {
+      background: var(--accent-black);
+      color: #ffffff;
+    }
+
+    .btn-danger-outline {
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid #e5e7eb;
+      font-size: 0.7rem;
+      padding: 7px 14px;
+    }
+
+    .btn-danger-outline:hover {
+      background: var(--danger);
+      color: #ffffff;
+      border-color: var(--danger);
+    }
+
+    /* Entry Card */
+    .entry-card {
+      background: var(--stone-surface);
+      border: 1px solid var(--border);
+      padding: 22px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-dark);
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: 2fr 1.5fr 1fr auto;
+      gap: 10px;
+    }
+
+    /* Active & Waitlist Grid */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-dark);
+    }
+
+    .panel-count {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    /* Queue & Item Cards */
+    .queue-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .student-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: var(--stone-surface);
+      border: 1px solid var(--border);
+      gap: 10px;
+    }
+
+    .student-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .student-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: var(--text-dark);
+    }
+
+    .student-class {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      background: #ffffff;
+      border: 1px solid var(--border);
+      padding: 2px 6px;
+      white-space: nowrap;
+    }
+
+    .student-id {
+      font-size: 0.72rem;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+    }
+
+    .timer {
+      font-family: 'Montserrat', monospace;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 4px 8px;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .timer.normal { color: var(--text-dark); }
+    .timer.warning { color: var(--warning); border-color: var(--warning); }
+    .timer.danger { color: var(--danger); border-color: var(--danger); }
+
+    .btn-return {
+      padding: 6px 14px;
+      font-size: 0.68rem;
+      background: #ffffff;
+      color: var(--text-dark);
+      border: 1px solid var(--border-dark);
+    }
+
+    .btn-return:hover {
+      background: var(--accent-black);
+      color: #ffffff;
+    }
+
+    .empty-state {
+      font-size: 0.75rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 20px 0;
+      text-align: center;
+    }
+
+    /* Scrollable Table */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      min-width: 600px;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+      text-align: left;
+    }
+
+    th, td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    th {
+      font-weight: 700;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-dark);
+      background: var(--stone-surface);
+    }
+
+    td {
+      font-weight: 500;
+      letter-spacing: 0.02em;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .history-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 16px 10px;
+      }
+      header {
+        padding: 20px 18px;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .controls-bar {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .controls-bar .btn-tv {
+        grid-column: span 2;
+        width: 100%;
+      }
+      .input-row {
+        grid-template-columns: 1fr;
+      }
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header with Venue, Date, Pass Limit & Option 1 TV Link -->
+    <header>
+      <div class="header-title">
+        <h1>Movement Tracker</h1>
+        <p>Washroom Pass</p>
+      </div>
+
+      <div class="controls-bar">
+        <div class="control-item">
+          <label>Venue</label>
+          <select id="venueSelect" onchange="saveAllData()">
+            <option value="School Hall">School Hall</option>
+            <option value="Indoor sports hall">Indoor sports hall</option>
+            <option value="A03-02">A03-02</option>
+            <option value="B06-03">B06-03</option>
+            <option value="C05-07">C05-07</option>
+            <option value="E1-09">E1-09</option>
+            <option value="Library">Library</option>
+            <option value="Event Horizon">Event Horizon</option>
+          </select>
+        </div>
+
+        <div class="control-item">
+          <label>Date</label>
+          <input type="date" id="dateInput" onchange="saveAllData()" />
+        </div>
+
+        <div class="control-item">
+          <label>Pass Limit</label>
+          <select id="limitSelect" onchange="updatePassLimit()">
+            <option value="1">1</option>
+            <option value="2" selected>2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+        </div>
+
+        <!-- Option 1: TV Display Link -->
+        <a href="tv.html" target="_blank" class="btn-link btn-tv">TV Display ↗</a>
+      </div>
+    </header>
+
+    <!-- Entry Card -->
+    <div class="entry-card">
+      <div class="section-label">Record Movement</div>
+      <div class="input-row">
+        <input type="text" id="barcodeInput" placeholder="Student ID" autofocus autocomplete="off" />
+        <input type="text" id="nameInput" placeholder="Student Name" />
+        <input type="text" id="classInput" placeholder="Class" />
+        <button onclick="handleManualSubmit()">Record Pass</button>
+      </div>
+    </div>
+
+    <!-- Active Movement & Waitlist Grid -->
+    <div class="dashboard-grid">
+      <!-- Currently Out -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Currently Out</span>
+          <span class="panel-count" id="activeCount">0 / 2</span>
+        </div>
+        <ul class="queue-list" id="activeList"></ul>
+      </div>
+
+      <!-- Waitlist -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Waiting List</span>
+          <span class="panel-count" id="waitCount">0 in line</span>
+        </div>
+        <ul class="queue-list" id="waitList"></ul>
+      </div>
+    </div>
+
+    <!-- Movement Log Table -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Movement Log</span>
+        <div class="history-actions">
+          <button class="btn-outline" style="padding: 7px 14px; font-size: 0.7rem;" onclick="exportToCSV()">
+            Export CSV
+          </button>
+          <button class="btn-danger-outline" onclick="clearDailyLog()">
+            Clear
+          </button>
+        </div>
+      </div>
+      
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Venue</th>
+              <th>Student</th>
+              <th>Class</th>
+              <th>Departed</th>
+              <th>Returned</th>
+              <th>Duration</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let maxActivePasses = parseInt(localStorage.getItem('passTracker_limit') || '2', 10);
+    let activeStudents = JSON.parse(localStorage.getItem('passTracker_active') || '[]');
+    let waitlist = JSON.parse(localStorage.getItem('passTracker_waitlist') || '[]');
+    let movementHistory = JSON.parse(localStorage.getItem('passTracker_history') || '[]');
+
+    const studentDirectory = {
+      "S1001": { name: "Alex Tan", class: "3-Integrity" },
+      "S1002": { name: "Sarah Lim", class: "3-Integrity" },
+      "S1003": { name: "Marcus Lee", class: "3-Integrity" },
+      "S2001": { name: "David Wong", class: "3-Respect" },
+      "S2002": { name: "Nurul Aisyah", class: "3-Respect" },
+      "S2003": { name: "Rachel Chen", class: "3-Respect" }
+    };
+
+    const barcodeInput = document.getElementById("barcodeInput");
+    const nameInput = document.getElementById("nameInput");
+    const classInput = document.getElementById("classInput");
+    const venueSelect = document.getElementById("venueSelect");
+    const limitSelect = document.getElementById("limitSelect");
+    const dateInput = document.getElementById("dateInput");
+
+    dateInput.value = localStorage.getItem('passTracker_date') || new Date().toISOString().split('T')[0];
+    venueSelect.value = localStorage.getItem('passTracker_venue') || 'School Hall';
+    limitSelect.value = maxActivePasses.toString();
+
+    function saveAllData() {
+      localStorage.setItem('passTracker_history', JSON.stringify(movementHistory));
+      localStorage.setItem('passTracker_active', JSON.stringify(activeStudents));
+      localStorage.setItem('passTracker_waitlist', JSON.stringify(waitlist));
+      localStorage.setItem('passTracker_limit', maxActivePasses.toString());
+      localStorage.setItem('passTracker_venue', venueSelect.value);
+      localStorage.setItem('passTracker_date', dateInput.value);
+    }
+
+    function updatePassLimit() {
+      maxActivePasses = parseInt(limitSelect.value, 10);
+      checkAndPromoteWaitlist();
+      saveAllData();
+      render();
+    }
+
+    barcodeInput.addEventListener("input", () => {
+      const id = barcodeInput.value.trim();
+      if (studentDirectory[id]) {
+        nameInput.value = studentDirectory[id].name;
+        classInput.value = studentDirectory[id].class;
+      }
+    });
+
+    barcodeInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const id = barcodeInput.value.trim();
+        if (id) processBarcode(id);
+      }
+    });
+
+    function processBarcode(id) {
+      const activeIndex = activeStudents.findIndex(s => s.id === id);
+      if (activeIndex !== -1) {
+        checkInStudent(activeIndex);
+        resetInputs();
+        return;
+      }
+
+      let name = nameInput.value.trim();
+      let cls = classInput.value.trim();
+
+      if (studentDirectory[id]) {
+        name = studentDirectory[id].name;
+        cls = studentDirectory[id].class;
+      }
+
+      if (!name) {
+        alert("Please enter the student's name before recording.");
+        nameInput.focus();
+        return;
+      }
+
+      processStudentRequest(id, name, cls || "N/A");
+      resetInputs();
+    }
+
+    function handleManualSubmit() {
+      const id = barcodeInput.value.trim();
+      let name = nameInput.value.trim();
+      let cls = classInput.value.trim();
+
+      if (!id && !name) {
+        alert("Please enter a Student ID or Name.");
+        barcodeInput.focus();
+        return;
+      }
+
+      if (id && studentDirectory[id]) {
+        name = studentDirectory[id].name;
+        cls = studentDirectory[id].class;
+      }
+
+      const finalId = id || `ID-${Math.floor(1000 + Math.random() * 9000)}`;
+
+      if (!name) {
+        alert("Please enter the student's name.");
+        nameInput.focus();
+        return;
+      }
+
+      const activeIndex = activeStudents.findIndex(s => s.id === finalId);
+      if (activeIndex !== -1) {
+        checkInStudent(activeIndex);
+      } else {
+        processStudentRequest(finalId, name, cls || "N/A");
+      }
+      resetInputs();
+    }
+
+    function processStudentRequest(id, name, cls) {
+      if (waitlist.some(s => s.id === id)) {
+        alert(`${name} is already in the waitlist.`);
+        return;
+      }
+
+      const student = {
+        id,
+        name,
+        class: cls,
+        venue: venueSelect.value,
+        date: dateInput.value,
+        startTime: null
+      };
+
+      if (activeStudents.length < maxActivePasses) {
+        student.startTime = Date.now();
+        activeStudents.push(student);
+      } else {
+        waitlist.push(student);
+      }
+      saveAllData();
+      render();
+    }
+
+    function checkInStudent(index) {
+      const returnedStudent = activeStudents.splice(index, 1)[0];
+      const endTime = Date.now();
+      const durationSec = Math.round((endTime - returnedStudent.startTime) / 1000);
+
+      movementHistory.unshift({
+        date: returnedStudent.date,
+        venue: returnedStudent.venue,
+        name: returnedStudent.name,
+        id: returnedStudent.id,
+        class: returnedStudent.class,
+        departed: new Date(returnedStudent.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        returned: new Date(endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        duration: formatDuration(durationSec)
+      });
+
+      checkAndPromoteWaitlist();
+      saveAllData();
+      render();
+    }
+
+    function checkAndPromoteWaitlist() {
+      while (activeStudents.length < maxActivePasses && waitlist.length > 0) {
+        const nextStudent = waitlist.shift();
+        nextStudent.startTime = Date.now();
+        activeStudents.push(nextStudent);
+      }
+    }
+
+    function exportToCSV() {
+      if (movementHistory.length === 0) {
+        alert("No movement records to export.");
+        return;
+      }
+
+      const headers = ["Date", "Venue", "Student Name", "Student ID", "Class", "Departed", "Returned", "Duration"];
+      const rows = movementHistory.map(item => [
+        `"${item.date}"`,
+        `"${item.venue || venueSelect.value}"`,
+        `"${item.name}"`,
+        `"${item.id}"`,
+        `"${item.class}"`,
+        `"${item.departed}"`,
+        `"${item.returned}"`,
+        `"${item.duration}"`
+      ]);
+
+      const csvContent = [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `Movement_Log_${dateInput.value}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function clearDailyLog() {
+      if (confirm("Are you sure you want to clear all movement logs, active passes, and waitlist records?")) {
+        movementHistory = [];
+        activeStudents = [];
+        waitlist = [];
+        saveAllData();
+        render();
+      }
+    }
+
+    function formatDuration(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins}m ${secs}s`;
+    }
+
+    function formatTimer(ms) {
+      const totalSecs = Math.floor(ms / 1000);
+      const mins = String(Math.floor(totalSecs / 60)).padStart(2, '0');
+      const secs = String(totalSecs % 60).padStart(2, '0');
+      return { text: `${mins}:${secs}`, totalSecs };
+    }
+
+    function resetInputs() {
+      barcodeInput.value = "";
+      nameInput.value = "";
+      classInput.value = "";
+      barcodeInput.focus();
+    }
+
+    function render() {
+      document.getElementById("activeCount").textContent = `${activeStudents.length} / ${maxActivePasses}`;
+      document.getElementById("waitCount").textContent = `${waitlist.length} in line`;
+
+      const activeList = document.getElementById("activeList");
+      activeList.innerHTML = activeStudents.length === 0 ? `<li class="empty-state">No students currently out.</li>` : "";
+
+      activeStudents.forEach((s, idx) => {
+        const elapsedMs = Date.now() - s.startTime;
+        const { text, totalSecs } = formatTimer(elapsedMs);
+
+        let timerClass = "normal";
+        if (totalSecs >= 600) timerClass = "danger";
+        else if (totalSecs >= 300) timerClass = "warning";
+
+        const li = document.createElement("li");
+        li.className = "student-row";
+        li.innerHTML = `
+          <div class="student-info">
+            <span class="student-name">${s.name}</span>
+            <span class="student-class">${s.class}</span>
+            <span class="student-id">#${s.id}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="timer ${timerClass}">${text}</span>
+            <button class="btn-return" onclick="checkInStudent(${idx})">Return</button>
+          </div>
+        `;
+        activeList.appendChild(li);
+      });
+
+      const waitListEl = document.getElementById("waitList");
+      waitListEl.innerHTML = waitlist.length === 0 ? `<li class="empty-state">No students waiting.</li>` : "";
+
+      waitlist.forEach((s, idx) => {
+        const li = document.createElement("li");
+        li.className = "student-row";
+        li.innerHTML = `
+          <div class="student-info">
+            <span style="font-weight: 700; font-size: 0.78rem; color: var(--text-muted); width: 22px;">${idx + 1}.</span>
+            <span class="student-name">${s.name}</span>
+            <span class="student-class">${s.class}</span>
+          </div>
+          <span class="student-id">QUEUED</span>
+        `;
+        waitListEl.appendChild(li);
+      });
+
+      const historyBody = document.getElementById("historyBody");
+      historyBody.innerHTML = movementHistory.length === 0 
+        ? `<tr><td colspan="7" class="empty-state">No recorded movements yet.</td></tr>`
+        : movementHistory.map(item => `
+          <tr>
+            <td>${item.date || dateInput.value}</td>
+            <td><span class="student-class">${item.venue || 'N/A'}</span></td>
+            <td><strong>${item.name}</strong> <span class="student-id">(${item.id})</span></td>
+            <td><span class="student-class">${item.class}</span></td>
+            <td>${item.departed}</td>
+            <td>${item.returned}</td>
+            <td><strong>${item.duration}</strong></td>
+          </tr>
+        `).join("");
+    }
+
+    setInterval(() => {
+      if (activeStudents.length > 0) render();
+    }, 1000);
+
+    render();
+  </script>
+</body>
+</html>
