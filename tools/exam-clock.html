@@ -112,8 +112,9 @@
             gap: 4px;
         }
 
+        /* Main Clock Display - Scales every part (hours, minutes, seconds, AM/PM) fluidly with screen size */
         .timer-display {
-            font-size: 5.5rem;
+            font-size: clamp(4rem, 12vw, 13rem); /* Scales smoothly from small screens to huge monitors */
             font-weight: 700;
             letter-spacing: 1px;
             font-variant-numeric: tabular-nums;
@@ -122,20 +123,22 @@
             display: flex;
             justify-content: center;
             align-items: baseline;
-            gap: 2px;
+            gap: 4px;
         }
 
-       .time-sec {
-            font-size: clamp(2rem, 6vw, 5.5rem); /* Scales proportionally with the clock */
+        /* Seconds scale proportionally relative to the main clock size */
+        .time-sec {
+            font-size: 0.5em; /* Exactly half the size of the hours/minutes */
             color: var(--text-muted);
             font-weight: 500;
         }
 
+        /* AM/PM scales proportionally relative to the main clock size */
         .time-ampm {
-            font-size: clamp(1.5rem, 5vw, 4.5rem); /* Scales proportionally with the clock */
+            font-size: 0.4em; /* Scales proportionally with the clock */
             color: var(--text-muted);
             font-weight: 600;
-            margin-left: 12px;
+            margin-left: 10px;
         }
 
         /* Timeline / Progress Bar Section */
