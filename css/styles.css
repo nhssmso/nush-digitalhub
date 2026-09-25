@@ -536,21 +536,29 @@ body {
     text-align: center;
 }
 
-/* Center blueprint drawing container */
+/* Container scales with screen size while staying centered */
 .blueprint-container {
     display: flex !important;
     justify-content: center !important;
     align-items: center;
-    margin: 1.5rem auto 3rem auto !important;
-    padding: 0 1rem;
+    width: 100%;
+    /* Responsive margin: 1.5rem on small screens, scaling up to 3rem on big monitors */
+    margin: clamp(1.5rem, 3vw, 3rem) auto !important;
+    padding: 0 1.5rem;
 }
 
+/* Fluid image that grows on large monitors but stops at an optimal cap */
 .blueprint-img {
-    max-width: 650px !important;
-    width: 100% !important;
+    /* Responsive width: 
+       - Minimum: 550px (or 100% on phones)
+       - Preferred: 65% of viewport width
+       - Maximum: 900px (keeps it sharp and well-proportioned) */
+    width: clamp(550px, 65vw, 900px) !important;
+    max-width: 100% !important; /* Prevents overflow on mobile screens */
     height: auto;
     display: block;
     margin: 0 auto;
     border: 1px solid #dcdcdc;
-    border-radius: 2px;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* Adds a subtle elevation */
 }
