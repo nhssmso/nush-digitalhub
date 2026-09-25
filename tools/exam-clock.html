@@ -82,22 +82,34 @@
         .icon-btn:hover { background-color: rgba(128, 128, 128, 0.1); }
         .icon-btn:active { transform: scale(0.95); }
 
-        /* Main Wrapper Card */
+       /* Main Wrapper Card - Now flexible and fills the available screen */
         .clock-container {
             background-color: var(--card-bg);
-            border-radius: 16px;
-            padding: 40px 30px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
-            width: 100%;
-            max-width: 750px;
+            border-radius: 20px;
+            padding: 5vh 4vw; /* Scales dynamically based on viewport height and width */
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.25);
+            width: 92%;       /* Takes up most of the screen width */
+            max-width: 1400px; /* Allows it to expand large on big monitors */
+            min-height: 75vh;  /* Ensures it maintains a prominent presence */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around; /* Distributes vertical space nicely */
             position: relative;
             transition: background-color 0.3s;
         }
 
-        /* Main Clock Display */
-        .clock-display-area {
-            text-align: center;
-            margin-bottom: 35px;
+       /* Main Clock Display - Uses clamp() to fluidly scale with screen width */
+        .timer-display {
+            font-size: clamp(4rem, 12vw, 11rem); /* Scales from 4rem up to a massive 11rem on large displays */
+            font-weight: 700;
+            letter-spacing: 2px;
+            font-variant-numeric: tabular-nums;
+            color: var(--text-color);
+            line-height: 1.1;
+            display: flex;
+            justify-content: center;
+            align-items: baseline;
+            gap: 4px;
         }
 
         .timer-display {
@@ -113,17 +125,17 @@
             gap: 2px;
         }
 
-        .time-sec {
-            font-size: 2.5rem;
+       .time-sec {
+            font-size: clamp(2rem, 6vw, 5.5rem); /* Scales proportionally with the clock */
             color: var(--text-muted);
             font-weight: 500;
         }
 
         .time-ampm {
-            font-size: 2rem;
+            font-size: clamp(1.5rem, 5vw, 4.5rem); /* Scales proportionally with the clock */
             color: var(--text-muted);
             font-weight: 600;
-            margin-left: 8px;
+            margin-left: 12px;
         }
 
         /* Timeline / Progress Bar Section */
